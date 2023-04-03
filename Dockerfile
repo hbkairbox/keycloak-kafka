@@ -1,6 +1,10 @@
-# https://www.keycloak.org/server/containers
-FROM quay.io/keycloak/keycloak:19.0.3
-RUN curl -sL https://github.com/SnuK87/keycloak-kafka/releases/download/1.1.1/keycloak-kafka-1.1.1-jar-with-dependencies.jar -o /opt/keycloak/providers/keycloak-kafka-1.1.1-jar-with-dependencies.jar
-RUN /opt/keycloak/bin/kc.sh build
+FROM maven:3.8.2-jdk-11 AS builder
 
-ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
+WORKDIR /
+
+# Copy dependencies for the build
+COPY src .
+COPY pom.xml .
+
+# Download dependencies and package the app
+RUN mvn -f /pom.xml clean package

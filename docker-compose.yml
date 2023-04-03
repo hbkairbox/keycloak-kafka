@@ -1,41 +1,78 @@
 version: '3'
+volumes:
+  postgres_data:
+    driver: local
 services:
-  keycloak:
-    depends_on:
-      - "kafka"
-    image: keycloak-kafka
-    ports:
-      - "8080:8080"
-    environment:
-      KEYCLOAK_ADMIN: admin 
-      KEYCLOAK_ADMIN_PASSWORD: admin
-      KAFKA_TOPIC: keycloak-events
-      KAFKA_CLIENT_ID: keycloak
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9094
-    command: start-dev
+    kcpostgres:
+      image: postgres:latest
+      hostname: kcpostgres
+      container_name: kcpostgres
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      environment:
+        POSTGRES_DB: keycloak
+        POSTGRES_USER: keycloak
+        POSTGRES_PASSWORD: password
+      ports:
+        - 5433:5432
     
-  zookeeper:
-    restart: always
-    image: bitnami/zookeeper:latest
-    ports:
-      - "2181:2181"
-    environment:    
-      - ALLOW_ANONYMOUS_LOGIN=yes
-      
-  kafka:
     depends_on:
-      - "zookeeper"
-    image: bitnami/kafka:latest
-    ports:
-      - "9092:9092"
-      - "9094:9094"
-    environment:
-      KAFKA_CFG_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://kafka:9094
-      KAFKA_CFG_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
-      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: INSIDE
-      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CREATE_TOPICS: "keycloak-events:1:1"
-      ALLOW_PLAINTEXT_LISTENER: "yes"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+    keycloak:
+      image: jboss/keycloak:latest
+      container_name: keycloak
+      hostname: keycloak    
+      environment:
+        DB_VENDOR: POSTGRES
+        DB_ADDR: kcpostgres
+        DB_DATABASE: keycloak
+        DB_USER: keycloak
+        DB_SCHEMA: public
+        DB_PASSWORD: password
+        KEYCLOAK_USER: admin
+        KEYCLOAK_PASSWORD: password
+        KEYCLOAK_LOGLEVEL: DEBUG
+        ROOT_LOGLEVEL: DEBUG
+        KC_HEALTH_ENABLED: true
+        KC_METRICS_ENABLED: true
+        KC_FEATURES: token-exchange
+      env_file:
+        - kafka.common.env
+      volumes:
+        - './keycloak-kafka-1.1.3-jar-with-dependencies.jar:/opt/jboss/keycloak/standalone/deployments/keycloak-kafka-1.1.3-jar-with-dependencies.jar'
+      healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:8095/auth/"]
+        interval: 5s
+        timeout: 2s
+        retries: 15
+      ports:
+        - 8095:8080
+        - 8443:8443
+      depends_on:
+        - kcpostgres
+        - kafka
+
+    zookeeper:
+      restart: always
+      image: bitnami/zookeeper:latest
+      ports:
+        - "2183:2181"
+      environment:    
+        - ALLOW_ANONYMOUS_LOGIN=yes
+        
+    kafka:
+      depends_on:
+        - "zookeeper"
+      image: bitnami/kafka:latest
+      ports:
+        - "9092:9092"
+        - "9094:9094"
+      environment:
+        KAFKA_CFG_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://kafka:9094
+        KAFKA_CFG_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+        KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+        KAFKA_CFG_INTER_BROKER_LISTENER_NAME: INSIDE
+        KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+        KAFKA_CREATE_TOPICS: "keycloak-events:1:1"
+        ALLOW_PLAINTEXT_LISTENER: "yes"
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
