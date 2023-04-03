@@ -16,7 +16,6 @@ services:
       ports:
         - 5433:5432
     
-    depends_on:
     keycloak:
       image: jboss/keycloak:latest
       container_name: keycloak
