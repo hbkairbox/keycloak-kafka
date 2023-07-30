@@ -14,8 +14,10 @@ public class KafkaProducerConfig {
 		KafkaProducerProperty[] producerProperties = KafkaProducerProperty.values();
 
 		for (KafkaProducerProperty property : producerProperties) {
-			if (property.getName() != null && scope.get(property.getName()) != null) {
-				propertyMap.put(property.getName(), scope.get(property.getName()));
+			String propertyEnv = System.getenv("KAFKA_" + property.name());
+
+			if (property.getName() != null && scope.get(property.getName(), propertyEnv) != null) {
+				propertyMap.put(property.getName(), scope.get(property.getName(), propertyEnv));
 			}
 		}
 
@@ -28,6 +30,7 @@ public class KafkaProducerConfig {
 		COMPRESSION_TYPE("compression.type"), //
 		RETRIES("retries"), //
 		SSL_KEY_PASSWORD("ssl.key.password"), //
+		SSL_KEYSTORE_CERTIFICATE_CHAIN("ssl.keystore.certificate.chain"), //
 		SSL_KEYSTORE_LOCATION("ssl.keystore.location"), //
 		SSL_KEYSTORE_PASSWORD("ssl.keystore.password"), //
 		SSL_TRUSTSTORE_LOCATION("ssl.truststore.location"), //
