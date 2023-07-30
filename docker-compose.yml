@@ -48,30 +48,28 @@ services:
         - 8443:8443
       depends_on:
         - kcpostgres
-        - kafka
+        - broker
 
-    zookeeper:
-      restart: always
-      image: bitnami/zookeeper:latest
+    broker:
+      image: confluentinc/confluent-local:7.4.1
+      hostname: broker
+      container_name: broker
       ports:
-        - "2183:2181"
-      environment:    
-        - ALLOW_ANONYMOUS_LOGIN=yes
-        
-    kafka:
-      depends_on:
-        - "zookeeper"
-      image: bitnami/kafka:latest
-      ports:
+        - "8082:8082"
         - "9092:9092"
-        - "9094:9094"
+        - "9101:9101"
       environment:
-        KAFKA_CFG_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://kafka:9094
-        KAFKA_CFG_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
-        KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-        KAFKA_CFG_INTER_BROKER_LISTENER_NAME: INSIDE
-        KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
-        KAFKA_CREATE_TOPICS: "keycloak-events:1:1"
-        ALLOW_PLAINTEXT_LISTENER: "yes"
-      volumes:
-        - /var/run/docker.sock:/var/run/docker.sock
+        KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092'
+        KAFKA_CONTROLLER_QUORUM_VOTERS: '1@broker:29093'
+        KAFKA_LISTENERS: 'PLAINTEXT://broker:29092,CONTROLLER://broker:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+
+    kafka-ui:
+      image: provectuslabs/kafka-ui:latest
+      ports:
+        - 9999:8080
+      environment:
+        DYNAMIC_CONFIG_ENABLED: true
+        KAFKA_CLUSTERS_0_NAME: local
+        KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: broker:29092
+      depends_on:
+        - broker
