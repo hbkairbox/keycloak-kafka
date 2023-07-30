@@ -37,7 +37,7 @@ services:
       env_file:
         - kafka.common.env
       volumes:
-        - './keycloak-kafka-1.1.3-jar-with-dependencies.jar:/opt/jboss/keycloak/standalone/deployments/keycloak-kafka-1.1.3-jar-with-dependencies.jar'
+        - './keycloak-kafka-1.1.5-jar-with-dependencies.jar:/opt/jboss/keycloak/standalone/deployments/keycloak-kafka-1.1.5-jar-with-dependencies.jar'
       healthcheck:
         test: ["CMD", "curl", "-f", "http://localhost:8095/auth/"]
         interval: 5s
