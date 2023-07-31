@@ -3,4 +3,7 @@ updates:
   - package-ecosystem: maven
     directory: /
     schedule:
-      interval: weekly
+      interval: daily
+    # Raise all npm pull requests with reviewers
+    reviewers:
+      - "hbkairbox"
