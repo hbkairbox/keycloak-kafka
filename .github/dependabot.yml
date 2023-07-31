@@ -4,6 +4,6 @@ updates:
     directory: /
     schedule:
       interval: daily
-    # Raise all npm pull requests with reviewers
+    # Raise all pull requests with reviewers
     reviewers:
       - "hbkairbox"
