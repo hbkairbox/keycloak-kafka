@@ -1,53 +1,20 @@
 version: '3'
-volumes:
-  postgres_data:
-    driver: local
 services:
-    kcpostgres:
-      image: postgres:latest
-      hostname: kcpostgres
-      container_name: kcpostgres
-      volumes:
-        - postgres_data:/var/lib/postgresql/data
-      environment:
-        POSTGRES_DB: keycloak
-        POSTGRES_USER: keycloak
-        POSTGRES_PASSWORD: password
-      ports:
-        - 5433:5432
-    
     keycloak:
-      image: jboss/keycloak:latest
+      image: quay.io/keycloak/keycloak:latest
       container_name: keycloak
-      hostname: keycloak    
+      hostname: keycloak
+      ports:
+        - "8180:8180"
       environment:
-        DB_VENDOR: POSTGRES
-        DB_ADDR: kcpostgres
-        DB_DATABASE: keycloak
-        DB_USER: keycloak
-        DB_SCHEMA: public
-        DB_PASSWORD: password
-        KEYCLOAK_USER: admin
-        KEYCLOAK_PASSWORD: password
-        KEYCLOAK_LOGLEVEL: DEBUG
-        ROOT_LOGLEVEL: DEBUG
-        KC_HEALTH_ENABLED: true
-        KC_METRICS_ENABLED: true
-        KC_FEATURES: token-exchange
+        - KEYCLOAK_ADMIN=admin
+        - KEYCLOAK_ADMIN_PASSWORD=admin
       env_file:
         - kafka.common.env
+      command: start-dev --http-port=8180
       volumes:
-        - './keycloak-kafka-1.1.5-jar-with-dependencies.jar:/opt/jboss/keycloak/standalone/deployments/keycloak-kafka-1.1.5-jar-with-dependencies.jar'
-      healthcheck:
-        test: ["CMD", "curl", "-f", "http://localhost:8095/auth/"]
-        interval: 5s
-        timeout: 2s
-        retries: 15
-      ports:
-        - 8095:8080
-        - 8443:8443
+        - './keycloak-kafka-1.1.5-jar-with-dependencies.jar:/opt/keycloak/providers/keycloak-kafka-1.1.5-jar-with-dependencies.jar'
       depends_on:
-        - kcpostgres
         - broker
 
     broker:
